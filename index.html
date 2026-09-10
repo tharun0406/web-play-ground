@@ -1,0 +1,1518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tharun DSA Galaxy - Interactive LeetCode Tracker</title>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-deep: #030014;
+            --neon-cyan: #00f3ff;
+            --neon-purple: #a855f7;
+            --neon-pink: #ec4899;
+            --neon-gold: #eab308;
+            --easy-color: #10b981;
+            --medium-color: #f59e0b;
+            --hard-color: #ef4444;
+            --glass-bg: rgba(15, 23, 42, 0.75);
+            --glass-border: rgba(255, 255, 255, 0.12);
+            --font-title: 'Orbitron', sans-serif;
+            --font-main: 'Rajdhani', sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: var(--bg-deep);
+            color: #f8fafc;
+            font-family: var(--font-main);
+            font-size: 16px;
+        }
+
+        /* Canvas Background */
+        #space-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        /* App Container */
+        .app-container {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            pointer-events: none;
+        }
+
+        .interactive {
+            pointer-events: auto;
+        }
+
+        /* Header Bar */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 2rem;
+            background: linear-gradient(180deg, rgba(3,0,20,0.95) 0%, rgba(3,0,20,0) 100%);
+            border-bottom: 1px solid rgba(0, 243, 255, 0.15);
+            backdrop-filter: blur(8px);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        /* Header Brain Icon System */
+        .revolving-brain-wrapper {
+            position: relative;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .revolving-brain-wrapper i {
+            position: relative;
+            z-index: 3;
+            font-size: 1.6rem;
+            color: var(--neon-cyan);
+            filter: drop-shadow(0 0 10px var(--neon-cyan));
+            animation: pulse-glow 3s infinite alternate;
+        }
+
+        /* Orbit Elements */
+        .orbit-ring {
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            border: 1.5px dashed rgba(0, 243, 255, 0.5);
+            animation: spin 8s linear infinite;
+            z-index: 1;
+        }
+
+        .orbit-ring-reverse {
+            position: absolute;
+            inset: -4px;
+            border-radius: 50%;
+            border: 1px solid transparent;
+            border-top: 2px solid var(--neon-purple);
+            border-bottom: 2px solid var(--neon-pink);
+            animation: spin-reverse 5s linear infinite;
+            z-index: 2;
+        }
+
+        .orbit-particle {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background: var(--neon-cyan);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--neon-cyan);
+            top: -3px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .brand-text h1 {
+            font-family: var(--font-title);
+            font-size: 1.5rem;
+            font-weight: 800;
+            letter-spacing: 2px;
+            background: linear-gradient(90deg, #fff, var(--neon-cyan), var(--neon-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-transform: uppercase;
+        }
+
+        .brand-text p {
+            font-size: 0.8rem;
+            color: #94a3b8;
+            letter-spacing: 1px;
+        }
+
+        /* Stats Bar */
+        .universe-stats {
+            display: flex;
+            gap: 1.5rem;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            padding: 0.6rem 1.2rem;
+            border-radius: 30px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.5);
+            backdrop-filter: blur(10px);
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-family: var(--font-title);
+            font-size: 0.85rem;
+        }
+
+        .stat-value {
+            color: var(--neon-cyan);
+            font-weight: 700;
+        }
+
+        /* Main Viewport Container */
+        .viewport {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            perspective: 1000px;
+        }
+
+        /* Universe Map System */
+        #universe-map {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            transition: transform 1.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.8s ease;
+            transform-origin: center center;
+        }
+
+        /* Ambient Orbit Guidance Rings */
+        .cosmic-orbit-ring {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            border: 1px dashed rgba(0, 243, 255, 0.12);
+            pointer-events: none;
+        }
+
+        /* Central Space Brain Core */
+        .central-brain-core {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+        }
+
+        .brain-core-glow {
+            position: absolute;
+            inset: -25px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(168, 85, 247, 0.5) 0%, rgba(0, 243, 255, 0.25) 50%, transparent 75%);
+            animation: pulse-glow 3s infinite alternate;
+            filter: blur(18px);
+        }
+
+        .brain-core-ring-1 {
+            position: absolute;
+            inset: -10px;
+            border-radius: 50%;
+            border: 2px dashed var(--neon-cyan);
+            animation: spin 12s linear infinite;
+        }
+
+        .brain-core-ring-2 {
+            position: absolute;
+            inset: -25px;
+            border-radius: 50%;
+            border: 1.5px solid transparent;
+            border-top: 2px solid var(--neon-pink);
+            border-bottom: 2px solid var(--neon-purple);
+            animation: spin-reverse 8s linear infinite;
+        }
+
+        .brain-core-icon {
+            font-size: 3.8rem;
+            color: #fff;
+            filter: drop-shadow(0 0 25px var(--neon-cyan));
+            z-index: 5;
+            animation: pulse-glow 2.5s infinite alternate;
+        }
+
+        /* Unpredictable Revolving Topic Nebulae */
+        .nebula {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 160px;
+            height: 160px;
+            margin-left: -80px;
+            margin-top: -80px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+            z-index: 15;
+            will-change: transform;
+        }
+
+        .nebula-glow {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            opacity: 0.65;
+            filter: blur(20px);
+            transition: all 0.4s ease;
+            animation: spin 20s linear infinite;
+        }
+
+        .nebula-core {
+            position: relative;
+            z-index: 2;
+            width: 125px;
+            height: 125px;
+            border-radius: 50%;
+            background: rgba(10, 15, 30, 0.88);
+            border: 2px solid rgba(255,255,255,0.22);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+            backdrop-filter: blur(6px);
+            box-shadow: inset 0 0 20px rgba(255,255,255,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .nebula:hover .nebula-core {
+            transform: scale(1.15);
+            border-color: var(--neon-cyan);
+            box-shadow: 0 0 30px var(--neon-cyan), inset 0 0 15px var(--neon-cyan);
+        }
+
+        .nebula:hover .nebula-glow {
+            opacity: 0.95;
+            filter: blur(30px);
+        }
+
+        .nebula-title {
+            font-family: var(--font-title);
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #fff;
+            margin-top: 5px;
+            text-shadow: 0 0 8px rgba(0,0,0,0.8);
+        }
+
+        .nebula-count {
+            font-size: 0.7rem;
+            color: var(--neon-cyan);
+            margin-top: 2px;
+            font-weight: 600;
+        }
+
+        .nebula-icon {
+            font-size: 1.6rem;
+        }
+
+        /* Back Button */
+        #btn-back {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 100;
+            background: var(--glass-bg);
+            border: 1px solid var(--neon-cyan);
+            color: var(--neon-cyan);
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-family: var(--font-title);
+            font-size: 0.85rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.2);
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(-20px);
+            transition: all 0.4s ease;
+        }
+
+        #btn-back.visible {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateY(0);
+        }
+
+        #btn-back:hover {
+            background: var(--neon-cyan);
+            color: var(--bg-deep);
+            box-shadow: 0 0 25px var(--neon-cyan);
+        }
+
+        /* Galaxy Detail View */
+        #galaxy-view {
+            position: absolute;
+            inset: 0;
+            z-index: 50;
+            padding: 80px 40px 40px 40px;
+            display: flex;
+            flex-direction: column;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.6s ease 0.3s;
+            overflow-y: auto;
+        }
+
+        #galaxy-view.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .galaxy-header {
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .galaxy-header h2 {
+            font-family: var(--font-title);
+            font-size: 2.2rem;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+
+        .galaxy-header p {
+            color: #94a3b8;
+            font-size: 1rem;
+            margin-top: 5px;
+        }
+
+        /* Problem Cards Grid */
+        .problems-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 1.5rem;
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+            padding-bottom: 120px;
+        }
+
+        .problem-card {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 1.4rem;
+            backdrop-filter: blur(12px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .problem-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, var(--neon-cyan), transparent);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .problem-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(0, 243, 255, 0.4);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(0, 243, 255, 0.15);
+        }
+
+        .problem-card:hover::before {
+            opacity: 1;
+        }
+
+        .problem-card.solved {
+            border-color: rgba(16, 185, 129, 0.4);
+            background: rgba(6, 78, 59, 0.25);
+        }
+
+        .problem-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+            gap: 10px;
+        }
+
+        .problem-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #f1f5f9;
+            line-height: 1.3;
+        }
+
+        .badge {
+            font-family: var(--font-title);
+            font-size: 0.65rem;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        .badge-easy {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--easy-color);
+            border: 1px solid var(--easy-color);
+            box-shadow: 0 0 8px rgba(16, 185, 129, 0.3);
+        }
+
+        .badge-medium {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--medium-color);
+            border: 1px solid var(--medium-color);
+            box-shadow: 0 0 8px rgba(245, 158, 11, 0.3);
+        }
+
+        .badge-hard {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--hard-color);
+            border: 1px solid var(--hard-color);
+            box-shadow: 0 0 8px rgba(239, 68, 68, 0.3);
+        }
+
+        .problem-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 1.2rem;
+            padding-top: 0.8rem;
+            border-top: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .custom-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            color: #94a3b8;
+            transition: color 0.2s;
+        }
+
+        .custom-checkbox:hover {
+            color: #fff;
+        }
+
+        .checkbox-box {
+            width: 20px;
+            height: 20px;
+            border-radius: 6px;
+            border: 2px solid rgba(255,255,255,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            background: rgba(0,0,0,0.3);
+        }
+
+        .custom-checkbox input {
+            display: none;
+        }
+
+        .custom-checkbox input:checked + .checkbox-box {
+            background: var(--easy-color);
+            border-color: var(--easy-color);
+            box-shadow: 0 0 10px var(--easy-color);
+        }
+
+        .custom-checkbox input:checked + .checkbox-box::after {
+            content: '\f00c';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            color: #fff;
+            font-size: 0.7rem;
+        }
+
+        .btn-leetcode {
+            color: var(--neon-cyan);
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-family: var(--font-title);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+            padding: 6px 12px;
+            border-radius: 8px;
+            background: rgba(0, 243, 255, 0.05);
+            border: 1px solid rgba(0, 243, 255, 0.2);
+        }
+
+        .btn-leetcode:hover {
+            background: rgba(0, 243, 255, 0.2);
+            box-shadow: 0 0 12px rgba(0, 243, 255, 0.4);
+            color: #fff;
+        }
+
+        /* AI Side Panel */
+        .ai-panel {
+            position: fixed;
+            right: 20px;
+            bottom: 20px;
+            width: 330px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            backdrop-filter: blur(16px);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 30px rgba(168, 85, 247, 0.15);
+            z-index: 100;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .ai-panel.collapsed {
+            height: 52px;
+            width: 220px;
+        }
+
+        .ai-header {
+            padding: 0.8rem 1.2rem;
+            background: linear-gradient(90deg, rgba(168, 85, 247, 0.25), rgba(0, 243, 255, 0.15));
+            border-bottom: 1px solid var(--glass-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .ai-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-family: var(--font-title);
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .revolving-brain-small {
+            position: relative;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .revolving-brain-small i {
+            color: var(--neon-purple);
+            filter: drop-shadow(0 0 8px var(--neon-purple));
+            font-size: 1rem;
+            z-index: 2;
+        }
+
+        .revolving-brain-small .orbit-ring-sm {
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            border: 1.5px dashed var(--neon-purple);
+            animation: spin 6s linear infinite;
+        }
+
+        .revolving-brain-small .orbit-particle-sm {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: var(--neon-pink);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--neon-pink);
+            top: -2px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .ai-body {
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+            max-height: 440px;
+            overflow-y: auto;
+        }
+
+        .ai-feature-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 0.7rem 0.9rem;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .ai-feature-card:hover {
+            background: rgba(168, 85, 247, 0.12);
+            border-color: rgba(168, 85, 247, 0.4);
+            transform: translateX(-3px);
+        }
+
+        .ai-feature-head {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: #f1f5f9;
+            margin-bottom: 3px;
+        }
+
+        .ai-feature-desc {
+            font-size: 0.78rem;
+            color: #94a3b8;
+            line-height: 1.3;
+        }
+
+        .btn-ask-tharun {
+            margin-top: 0.3rem;
+            background: linear-gradient(90deg, var(--neon-purple), var(--neon-cyan));
+            border: none;
+            color: #fff;
+            padding: 0.75rem;
+            border-radius: 12px;
+            font-family: var(--font-title);
+            font-size: 0.8rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 0 15px rgba(168, 85, 247, 0.4);
+            transition: all 0.3s;
+        }
+
+        .btn-ask-tharun:hover {
+            opacity: 0.9;
+            transform: scale(1.02);
+            box-shadow: 0 0 25px rgba(0, 243, 255, 0.6);
+        }
+
+        /* Modal Chat Widget */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(3, 0, 20, 0.85);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-container {
+            width: 90%;
+            max-width: 600px;
+            background: rgba(15, 23, 42, 0.95);
+            border: 1px solid var(--neon-purple);
+            border-radius: 20px;
+            box-shadow: 0 0 50px rgba(168, 85, 247, 0.3);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+
+        .modal-overlay.active .modal-container {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            padding: 1rem 1.2rem;
+            border-bottom: 1px solid var(--glass-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(168, 85, 247, 0.1);
+        }
+
+        .modal-header h3 {
+            font-family: var(--font-title);
+            font-size: 1.1rem;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .close-modal {
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            font-size: 1.4rem;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .close-modal:hover {
+            color: #fff;
+        }
+
+        .chat-body {
+            padding: 1.2rem;
+            height: 300px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .chat-msg {
+            display: flex;
+            gap: 10px;
+            max-width: 85%;
+        }
+
+        .chat-msg.bot {
+            align-self: flex-start;
+        }
+
+        .chat-msg.user {
+            align-self: flex-end;
+            flex-direction: row-reverse;
+        }
+
+        .msg-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--neon-purple);
+            color: #fff;
+            font-size: 0.85rem;
+            flex-shrink: 0;
+        }
+
+        .chat-msg.user .msg-avatar {
+            background: var(--neon-cyan);
+            color: var(--bg-deep);
+        }
+
+        .msg-content {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            padding: 0.7rem 1rem;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            line-height: 1.4;
+            color: #e2e8f0;
+        }
+
+        .chat-msg.user .msg-content {
+            background: rgba(0, 243, 255, 0.1);
+            border-color: rgba(0, 243, 255, 0.3);
+        }
+
+        .chat-input-area {
+            padding: 0.8rem 1.2rem;
+            border-top: 1px solid var(--glass-border);
+            display: flex;
+            gap: 10px;
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        .chat-input {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            padding: 0.7rem 1rem;
+            border-radius: 10px;
+            color: #fff;
+            font-family: var(--font-main);
+            font-size: 0.95rem;
+            outline: none;
+        }
+
+        .chat-input:focus {
+            border-color: var(--neon-purple);
+            box-shadow: 0 0 10px rgba(168, 85, 247, 0.3);
+        }
+
+        .btn-send {
+            background: var(--neon-purple);
+            border: none;
+            color: #fff;
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+
+        .btn-send:hover {
+            background: var(--neon-cyan);
+            color: var(--bg-deep);
+            box-shadow: 0 0 15px var(--neon-cyan);
+        }
+
+        /* Keyframe Animations */
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes spin-reverse {
+            0% { transform: rotate(360deg); }
+            100% { transform: rotate(0deg); }
+        }
+
+        @keyframes pulse-glow {
+            0% { filter: drop-shadow(0 0 5px var(--neon-cyan)); transform: scale(1); }
+            100% { filter: drop-shadow(0 0 25px var(--neon-purple)); transform: scale(1.06); }
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(3, 0, 20, 0.5);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--neon-cyan);
+        }
+
+        @media (max-width: 768px) {
+            header {
+                padding: 0.8rem 1rem;
+            }
+            .brand-text h1 {
+                font-size: 1.1rem;
+            }
+            .universe-stats {
+                font-size: 0.75rem;
+                padding: 0.4rem 0.8rem;
+            }
+            .ai-panel {
+                width: calc(100% - 40px);
+                right: 20px;
+                left: 20px;
+                bottom: 10px;
+            }
+            #galaxy-view {
+                padding: 70px 20px 120px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Canvas Background -->
+    <canvas id="space-canvas"></canvas>
+
+    <!-- App Interface Overlay -->
+    <div class="app-container">
+        
+        <!-- Header -->
+        <header class="interactive">
+            <div class="brand">
+                <div class="revolving-brain-wrapper">
+                    <div class="orbit-ring">
+                        <div class="orbit-particle"></div>
+                    </div>
+                    <div class="orbit-ring-reverse"></div>
+                    <i class="fa-solid fa-brain"></i>
+                </div>
+
+                <div class="brand-text">
+                    <h1>Tharun DSA Universe</h1>
+                    <p>Cosmic LeetCode Mastery Map</p>
+                </div>
+            </div>
+
+            <div class="universe-stats">
+                <div class="stat-item">
+                    <i class="fa-solid fa-star" style="color: var(--neon-gold);"></i>
+                    <span>Solved: <span id="stat-solved" class="stat-value">0</span>/<span id="stat-total" class="stat-value">0</span></span>
+                </div>
+                <div class="stat-item">
+                    <i class="fa-solid fa-fire" style="color: var(--neon-pink);"></i>
+                    <span>Progress: <span id="stat-progress" class="stat-value">0%</span></span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Viewport -->
+        <div class="viewport">
+            
+            <!-- Back Button -->
+            <button id="btn-back" class="interactive">
+                <i class="fa-solid fa-globe"></i>
+                Back to Universe Map
+            </button>
+
+            <!-- Universe Map (Unpredictable Orbiting System Around Central Brain) -->
+            <div id="universe-map">
+                <!-- Cosmic Orbit Guides -->
+                <div class="cosmic-orbit-ring" style="width: 520px; height: 520px;"></div>
+                <div class="cosmic-orbit-ring" style="width: 680px; height: 680px; border-style: dotted; opacity: 0.4;"></div>
+                
+                <!-- Central Space Brain -->
+                <div class="central-brain-core">
+                    <div class="brain-core-glow"></div>
+                    <div class="brain-core-ring-1"></div>
+                    <div class="brain-core-ring-2"></div>
+                    <i class="fa-solid fa-brain brain-core-icon"></i>
+                </div>
+            </div>
+
+            <!-- Galaxy View Overlay -->
+            <div id="galaxy-view" class="interactive">
+                <div class="galaxy-header">
+                    <h2 id="galaxy-title" style="color: var(--neon-cyan);">Array Galaxy</h2>
+                    <p id="galaxy-desc">Master space complexity & memory layouts</p>
+                </div>
+                <div class="problems-grid" id="problems-grid"></div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- AI Panel -->
+    <div class="ai-panel interactive" id="ai-panel">
+        <div class="ai-header" onclick="toggleAIPanel()">
+            <div class="ai-title">
+                <div class="revolving-brain-small">
+                    <div class="orbit-ring-sm">
+                        <div class="orbit-particle-sm"></div>
+                    </div>
+                    <i class="fa-solid fa-brain"></i>
+                </div>
+                <span>Tharun AI Assistant</span>
+            </div>
+            <i class="fa-solid fa-chevron-down" id="ai-toggle-icon" style="color: #94a3b8;"></i>
+        </div>
+        <div class="ai-body">
+            <div class="ai-feature-card" onclick="openAIChat('code-explainer')">
+                <div class="ai-feature-head">
+                    <i class="fa-solid fa-code" style="color: var(--neon-cyan);"></i>
+                    <span>Tharun Code Explainer</span>
+                </div>
+                <div class="ai-feature-desc">Step-by-step logic breakdown & intuition mapping.</div>
+            </div>
+
+            <div class="ai-feature-card" onclick="openAIChat('complexity-analyzer')">
+                <div class="ai-feature-head">
+                    <i class="fa-solid fa-gauge-high" style="color: var(--neon-gold);"></i>
+                    <span>Complexity Analyzer</span>
+                </div>
+                <div class="ai-feature-desc">Instant Big-O Time & Space analysis of your code.</div>
+            </div>
+
+            <div class="ai-feature-card" onclick="openAIChat('hint-generator')">
+                <div class="ai-feature-head">
+                    <i class="fa-solid fa-lightbulb" style="color: var(--neon-purple);"></i>
+                    <span>Hint Generator</span>
+                </div>
+                <div class="ai-feature-desc">Get progressive hints without spoiling the full answer.</div>
+            </div>
+
+            <div class="ai-feature-card" onclick="openAIChat('edge-cases')">
+                <div class="ai-feature-head">
+                    <i class="fa-solid fa-bug" style="color: var(--neon-pink);"></i>
+                    <span>Edge Case Detector</span>
+                </div>
+                <div class="ai-feature-desc">AI-generated tricky test cases for boundary checks.</div>
+            </div>
+
+            <button class="btn-ask-tharun" onclick="openAIChat('general')">
+                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                Ask Tharun AI
+            </button>
+        </div>
+    </div>
+
+    <!-- AI Chat Modal -->
+    <div class="modal-overlay interactive" id="ai-modal">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-robot" style="color: var(--neon-purple);"></i> Tharun AI Co-Pilot</h3>
+                <button class="close-modal" onclick="closeAIChat()">&times;</button>
+            </div>
+            <div class="chat-body" id="chat-body">
+                <div class="chat-msg bot">
+                    <div class="msg-avatar"><i class="fa-solid fa-user-astronaut"></i></div>
+                    <div class="msg-content">
+                        Greetings, Space Explorer! I am Tharun AI. How can I assist your LeetCode navigation today?
+                    </div>
+                </div>
+            </div>
+            <div class="chat-input-area">
+                <input type="text" class="chat-input" id="chat-input" placeholder="Ask a question about DSA, time complexity, or hints..." onkeydown="handleChatKey(event)">
+                <button class="btn-send" onclick="sendChatMessage()"><i class="fa-solid fa-paper-plane"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script Logic -->
+    <script>
+        // 1. Data Structure Definitions
+        const dsaData = [
+            {
+                id: 'arrays',
+                title: 'Arrays & Hashing',
+                desc: 'Master spatial layout, hash function lookups, and index tracking.',
+                icon: 'fa-border-all',
+                color: '#00f3ff',
+                problems: [
+                    { id: 'p1', title: 'Two Sum', diff: 'Easy', link: 'https://leetcode.com/problems/two-sum/' },
+                    { id: 'p2', title: 'Valid Anagram', diff: 'Easy', link: 'https://leetcode.com/problems/valid-anagram/' },
+                    { id: 'p3', title: 'Group Anagrams', diff: 'Medium', link: 'https://leetcode.com/problems/group-anagrams/' },
+                    { id: 'p4', title: 'Top K Frequent Elements', diff: 'Medium', link: 'https://leetcode.com/problems/top-k-frequent-elements/' },
+                    { id: 'p5', title: 'Product of Array Except Self', diff: 'Medium', link: 'https://leetcode.com/problems/product-of-array-except-self/' },
+                    { id: 'p6', title: 'Longest Consecutive Sequence', diff: 'Medium', link: 'https://leetcode.com/problems/longest-consecutive-sequence/' }
+                ]
+            },
+            {
+                id: 'two-pointers',
+                title: 'Two Pointers',
+                desc: 'Traverse contiguous memory with inward/outward pointing bounds.',
+                icon: 'fa-arrows-left-right',
+                color: '#a855f7',
+                problems: [
+                    { id: 'p7', title: 'Valid Palindrome', diff: 'Easy', link: 'https://leetcode.com/problems/valid-palindrome/' },
+                    { id: 'p8', title: '3Sum', diff: 'Medium', link: 'https://leetcode.com/problems/3sum/' },
+                    { id: 'p9', title: 'Container With Most Water', diff: 'Medium', link: 'https://leetcode.com/problems/container-with-most-water/' },
+                    { id: 'p10', title: 'Trapping Rain Water', diff: 'Hard', link: 'https://leetcode.com/problems/trapping-rain-water/' }
+                ]
+            },
+            {
+                id: 'sliding-window',
+                title: 'Sliding Window',
+                desc: 'Dynamic range sub-segment calculations over continuous streams.',
+                icon: 'fa-sliders',
+                color: '#ec4899',
+                problems: [
+                    { id: 'p11', title: 'Best Time to Buy and Sell Stock', diff: 'Easy', link: 'https://leetcode.com/problems/best-time-to-buy-and-sell-stock/' },
+                    { id: 'p12', title: 'Longest Substring Without Repeating Characters', diff: 'Medium', link: 'https://leetcode.com/problems/longest-substring-without-repeating-characters/' },
+                    { id: 'p13', title: 'Longest Repeating Character Replacement', diff: 'Medium', link: 'https://leetcode.com/problems/longest-repeating-character-replacement/' },
+                    { id: 'p14', title: 'Minimum Window Substring', diff: 'Hard', link: 'https://leetcode.com/problems/minimum-window-substring/' }
+                ]
+            },
+            {
+                id: 'trees',
+                title: 'Trees & Hierarchies',
+                desc: 'Recursive searching, BST properties, and Depth-First traversing.',
+                icon: 'fa-network-wired',
+                color: '#10b981',
+                problems: [
+                    { id: 'p15', title: 'Invert Binary Tree', diff: 'Easy', link: 'https://leetcode.com/problems/invert-binary-tree/' },
+                    { id: 'p16', title: 'Maximum Depth of Binary Tree', diff: 'Easy', link: 'https://leetcode.com/problems/maximum-depth-of-binary-tree/' },
+                    { id: 'p17', title: 'Binary Tree Level Order Traversal', diff: 'Medium', link: 'https://leetcode.com/problems/binary-tree-level-order-traversal/' },
+                    { id: 'p18', title: 'Validate Binary Search Tree', diff: 'Medium', link: 'https://leetcode.com/problems/validate-binary-search-tree/' },
+                    { id: 'p19', title: 'Serialize and Deserialize Binary Tree', diff: 'Hard', link: 'https://leetcode.com/problems/serialize-and-deserialize-binary-tree/' }
+                ]
+            },
+            {
+                id: 'graphs',
+                title: 'Graphs & Networks',
+                desc: 'Node-edge networks, BFS queue paths, and topological ordering.',
+                icon: 'fa-diagram-project',
+                color: '#eab308',
+                problems: [
+                    { id: 'p20', title: 'Number of Islands', diff: 'Medium', link: 'https://leetcode.com/problems/number-of-islands/' },
+                    { id: 'p21', title: 'Clone Graph', diff: 'Medium', link: 'https://leetcode.com/problems/clone-graph/' },
+                    { id: 'p22', title: 'Course Schedule', diff: 'Medium', link: 'https://leetcode.com/problems/course-schedule/' },
+                    { id: 'p23', title: 'Word Ladder', diff: 'Hard', link: 'https://leetcode.com/problems/word-ladder/' }
+                ]
+            },
+            {
+                id: 'dp',
+                title: 'Dynamic Programming',
+                desc: 'Optimal sub-structure caching, state tables, and recurrence relations.',
+                icon: 'fa-cubes',
+                color: '#3b82f6',
+                problems: [
+                    { id: 'p24', title: 'Climbing Stairs', diff: 'Easy', link: 'https://leetcode.com/problems/climbing-stairs/' },
+                    { id: 'p25', title: 'Coin Change', diff: 'Medium', link: 'https://leetcode.com/problems/coin-change/' },
+                    { id: 'p26', title: 'Longest Increasing Subsequence', diff: 'Medium', link: 'https://leetcode.com/problems/longest-increasing-subsequence/' },
+                    { id: 'p27', title: 'Word Break', diff: 'Medium', link: 'https://leetcode.com/problems/word-break/' },
+                    { id: 'p28', title: 'Edit Distance', diff: 'Hard', link: 'https://leetcode.com/problems/edit-distance/' }
+                ]
+            }
+        ];
+
+        let solvedProblems = JSON.parse(localStorage.getItem('tharun_solved_problems')) || {};
+
+        // 2. Starfield Canvas Engine
+        const canvas = document.getElementById('space-canvas');
+        const ctx = canvas.getContext('2d');
+        let stars = [];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        class Star {
+            constructor() { this.reset(); }
+            reset() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 2;
+                this.alpha = Math.random();
+                this.speed = Math.random() * 0.05 + 0.01;
+                this.color = ['#fff', '#00f3ff', '#a855f7', '#3b82f6'][Math.floor(Math.random() * 4)];
+            }
+            update() {
+                this.alpha += this.speed;
+                if (this.alpha > 1 || this.alpha < 0) this.speed = -this.speed;
+            }
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = Math.abs(this.alpha);
+                ctx.fillStyle = this.color;
+                ctx.shadowBlur = this.size * 3;
+                ctx.shadowColor = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        function initStars() {
+            resizeCanvas();
+            stars = Array.from({ length: 250 }, () => new Star());
+        }
+
+        function animateSpace() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            stars.forEach(s => { s.update(); s.draw(); });
+            requestAnimationFrame(animateSpace);
+        }
+
+        window.addEventListener('resize', initStars);
+
+        // 3. Unpredictable Cosmic Orbital Engine Around Central Brain
+        const universeMap = document.getElementById('universe-map');
+        const galaxyView = document.getElementById('galaxy-view');
+        const btnBack = document.getElementById('btn-back');
+        
+        let nebulaElements = [];
+        let globalTime = 0;
+        let isZoomed = false;
+
+        function renderUniverseMap() {
+            nebulaElements.forEach(item => item.element.remove());
+            nebulaElements = [];
+
+            const totalTopics = dsaData.length;
+            
+            dsaData.forEach((topic, index) => {
+                const nebula = document.createElement('div');
+                nebula.className = 'nebula interactive';
+
+                const solvedInTopic = topic.problems.filter(p => solvedProblems[p.id]).length;
+
+                nebula.innerHTML = `
+                    <div class="nebula-glow" style="background: radial-gradient(circle, ${topic.color} 0%, transparent 70%);"></div>
+                    <div class="nebula-core">
+                        <i class="fa-solid ${topic.icon} nebula-icon" style="color: ${topic.color};"></i>
+                        <div class="nebula-title">${topic.title}</div>
+                        <div class="nebula-count">${solvedInTopic}/${topic.problems.length} Solved</div>
+                    </div>
+                `;
+
+                const orbitParams = {
+                    element: nebula,
+                    topic: topic,
+                    angle: (index / totalTopics) * (Math.PI * 2),
+                    // Unique elliptical radii for dynamic shape
+                    radiusX: 200 + (index % 3) * 55 + Math.random() * 30,
+                    radiusY: 150 + (index % 2) * 65 + Math.random() * 30,
+                    // Unique speeds and orbital direction
+                    speed: (0.002 + Math.random() * 0.003) * (index % 2 === 0 ? 1 : -1),
+                    // Orbital tilt angle
+                    tilt: (Math.random() - 0.5) * 0.6,
+                    // Noise frequencies for subtle drift & speed fluctuations
+                    driftFreq: 0.8 + Math.random() * 1.5,
+                    isHovered: false,
+                    x: 0,
+                    y: 0
+                };
+
+                nebula.addEventListener('mouseenter', () => orbitParams.isHovered = true);
+                nebula.addEventListener('mouseleave', () => orbitParams.isHovered = false);
+                nebula.addEventListener('click', () => zoomToNebula(topic, index));
+
+                universeMap.appendChild(nebula);
+                nebulaElements.push(orbitParams);
+            });
+        }
+
+        function startUnpredictableOrbitAnimation() {
+            function step() {
+                globalTime += 0.015;
+
+                nebulaElements.forEach((item) => {
+                    if (!item.isHovered && !isZoomed) {
+                        // Fluctuate speed dynamically over time using layered sine waves
+                        const speedMod = 1 + Math.sin(globalTime * item.driftFreq) * 0.45;
+                        item.angle += item.speed * speedMod;
+                    }
+
+                    // Dynamic oscillating orbital expansion/contraction (unpredictable radial wobble)
+                    const radiusWobbleX = Math.sin(globalTime * 0.5 + item.tilt) * 25;
+                    const radiusWobbleY = Math.cos(globalTime * 0.7 - item.tilt) * 20;
+
+                    const rx = item.radiusX + radiusWobbleX;
+                    const ry = item.radiusY + radiusWobbleY;
+
+                    // Unpredictable 2D position with rotational tilt shift
+                    const rawX = Math.cos(item.angle) * rx;
+                    const rawY = Math.sin(item.angle) * ry;
+
+                    item.x = rawX * Math.cos(item.tilt) - rawY * Math.sin(item.tilt);
+                    item.y = rawX * Math.sin(item.tilt) + rawY * Math.cos(item.tilt);
+
+                    if (!isZoomed) {
+                        item.element.style.transform = `translate(${item.x}px, ${item.y}px)`;
+                    }
+                });
+
+                requestAnimationFrame(step);
+            }
+            requestAnimationFrame(step);
+        }
+
+        function zoomToNebula(topic, index) {
+            if (isZoomed) return;
+            isZoomed = true;
+
+            const item = nebulaElements[index];
+            const scale = 3.5;
+            const translateX = -item.x * scale;
+            const translateY = -item.y * scale;
+
+            universeMap.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+            universeMap.style.opacity = '0.15';
+
+            loadGalaxyContent(topic);
+
+            btnBack.classList.add('visible');
+            galaxyView.classList.add('active');
+        }
+
+        function zoomOut() {
+            if (!isZoomed) return;
+            isZoomed = false;
+
+            universeMap.style.transform = 'translate(0px, 0px) scale(1)';
+            universeMap.style.opacity = '1';
+
+            galaxyView.classList.remove('active');
+            btnBack.classList.remove('visible');
+
+            renderUniverseMap();
+        }
+
+        btnBack.addEventListener('click', zoomOut);
+
+        // 4. Galaxy Problem Cards Tracker
+        function loadGalaxyContent(topic) {
+            document.getElementById('galaxy-title').innerText = topic.title;
+            document.getElementById('galaxy-title').style.color = topic.color;
+            document.getElementById('galaxy-title').style.textShadow = `0 0 20px ${topic.color}`;
+            document.getElementById('galaxy-desc').innerText = topic.desc;
+
+            const grid = document.getElementById('problems-grid');
+            grid.innerHTML = '';
+
+            topic.problems.forEach(prob => {
+                const isSolved = !!solvedProblems[prob.id];
+                const card = document.createElement('div');
+                card.className = `problem-card ${isSolved ? 'solved' : ''}`;
+                
+                let badgeClass = 'badge-easy';
+                if (prob.diff === 'Medium') badgeClass = 'badge-medium';
+                if (prob.diff === 'Hard') badgeClass = 'badge-hard';
+
+                card.innerHTML = `
+                    <div class="problem-top">
+                        <div class="problem-title">${prob.title}</div>
+                        <span class="badge ${badgeClass}">${prob.diff}</span>
+                    </div>
+                    <div class="problem-actions">
+                        <label class="custom-checkbox">
+                            <input type="checkbox" ${isSolved ? 'checked' : ''} onchange="toggleProblem('${prob.id}', this)">
+                            <span class="checkbox-box"></span>
+                            <span>${isSolved ? 'Solved' : 'Mark Solved'}</span>
+                        </label>
+                        <a href="${prob.link}" target="_blank" class="btn-leetcode">
+                            <span>Solve</span>
+                            <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                        </a>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function toggleProblem(id, checkbox) {
+            solvedProblems[id] = checkbox.checked;
+            localStorage.setItem('tharun_solved_problems', JSON.stringify(solvedProblems));
+            
+            const card = checkbox.closest('.problem-card');
+            if (checkbox.checked) {
+                card.classList.add('solved');
+                card.querySelector('.custom-checkbox span:last-child').innerText = 'Solved';
+            } else {
+                card.classList.remove('solved');
+                card.querySelector('.custom-checkbox span:last-child').innerText = 'Mark Solved';
+            }
+
+            updateGlobalStats();
+        }
+
+        function updateGlobalStats() {
+            let total = 0;
+            dsaData.forEach(t => total += t.problems.length);
+            const solvedCount = Object.values(solvedProblems).filter(Boolean).length;
+            const percentage = total > 0 ? Math.round((solvedCount / total) * 100) : 0;
+
+            document.getElementById('stat-solved').innerText = solvedCount;
+            document.getElementById('stat-total').innerText = total;
+            document.getElementById('stat-progress').innerText = `${percentage}%`;
+        }
+
+        // 5. Tharun AI Widget System
+        const aiPanel = document.getElementById('ai-panel');
+        const aiToggleIcon = document.getElementById('ai-toggle-icon');
+        const aiModal = document.getElementById('ai-modal');
+        const chatBody = document.getElementById('chat-body');
+        const chatInput = document.getElementById('chat-input');
+
+        function toggleAIPanel() {
+            aiPanel.classList.toggle('collapsed');
+            aiToggleIcon.className = aiPanel.classList.contains('collapsed') ? 'fa-solid fa-chevron-up' : 'fa-solid fa-chevron-down';
+        }
+
+        function openAIChat(feature) {
+            aiModal.classList.add('active');
+            let promptText = "";
+            if (feature === 'code-explainer') promptText = "Can you explain the optimal logic for Array Two-Sum?";
+            if (feature === 'complexity-analyzer') promptText = "What is the time/space complexity of Graph BFS vs DFS?";
+            if (feature === 'hint-generator') promptText = "Give me a progressive hint for 3Sum without full code.";
+            if (feature === 'edge-cases') promptText = "What are tricky edge cases for Sliding Window problems?";
+
+            if (promptText) {
+                appendChatMessage('user', promptText);
+                simulateAIBotResponse(feature);
+            }
+        }
+
+        function closeAIChat() { aiModal.classList.remove('active'); }
+        function handleChatKey(e) { if (e.key === 'Enter') sendChatMessage(); }
+
+        function sendChatMessage() {
+            const text = chatInput.value.trim();
+            if (!text) return;
+
+            appendChatMessage('user', text);
+            chatInput.value = '';
+            simulateAIBotResponse('general', text);
+        }
+
+        function appendChatMessage(sender, text) {
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `chat-msg ${sender}`;
+            const avatar = sender === 'bot' ? '<i class="fa-solid fa-user-astronaut"></i>' : '<i class="fa-solid fa-user"></i>';
+
+            msgDiv.innerHTML = `
+                <div class="msg-avatar">${avatar}</div>
+                <div class="msg-content">${text}</div>
+            `;
+            chatBody.appendChild(msgDiv);
+            chatBody.scrollTop = chatBody.scrollHeight;
+        }
+
+        function simulateAIBotResponse(type, userMsg = "") {
+            setTimeout(() => {
+                let response = "";
+                if (type === 'code-explainer') {
+                    response = "⚡ <strong>Tharun Explainer:</strong> The two-pointer approach leverages sorted arrays to shrink the search space from O(N²) down to O(N). By moving left/right bounds inward based on sum evaluation, we eliminate invalid pairs in constant time!";
+                } else if (type === 'complexity-analyzer') {
+                    response = "📊 <strong>Big-O Breakdown:</strong><br>• <strong>Time Complexity:</strong> O(N log N) due to initial sorting phase.<br>• <strong>Space Complexity:</strong> O(1) or O(N) depending on in-place sorting implementations.";
+                } else if (type === 'hint-generator') {
+                    response = "💡 <strong>Progressive Hint #1:</strong> Try sorting the array first. Once sorted, can you turn 3Sum into a series of Two-Sum sub-problems?";
+                } else if (type === 'edge-cases') {
+                    response = "🧪 <strong>Edge Case Alert:</strong> Watch out for:<br>1. Empty/Single element arrays.<br>2. Arrays with all duplicate elements.<br>3. Integer overflow when calculating sub-segment sums.";
+                } else {
+                    response = `🚀 <strong>Tharun AI:</strong> Analyzed query regarding "${userMsg}". Optimal pattern detected: Consider applying Hash Mapping to achieve O(1) average lookup times for this problem state.`;
+                }
+                appendChatMessage('bot', response);
+            }, 800);
+        }
+
+        // Initialize App
+        window.addEventListener('DOMContentLoaded', () => {
+            initStars();
+            animateSpace();
+            renderUniverseMap();
+            startUnpredictableOrbitAnimation();
+            updateGlobalStats();
+        });
+    </script>
+</body>
+</html>
